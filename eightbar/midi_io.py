@@ -15,6 +15,8 @@ from typing import Iterable
 
 import mido
 
+from .midi_tail import verified_fl_setup_tail
+
 from .model import (Arrangement, BAR, ControlChange, DRUM_ROLES, Note, PitchBend, PPQ,
                     Source, StudioError, Track)
 
@@ -156,8 +158,10 @@ def _layer_maps(midi: mido.MidiFile, warnings: list[str]) -> tuple[dict, set[int
 def _source_duration(midi: mido.MidiFile, references: set[int], warnings: list[str]) -> tuple[int, bool]:
     """Retain declared rests, allowing only a tiny provably unchanged setup tail."""
     timeline = []
+    source_events = []
     for owner, track in enumerate(midi.tracks):
         absolute = 0
+        lane = []
         for index, message in enumerate(track):
             if not isinstance(message.time, int) or message.time < 0:
                 raise StudioError('This MIDI contains invalid event timing.')
@@ -165,6 +169,8 @@ def _source_duration(midi: mido.MidiFile, references: set[int], warnings: list[s
             tick = _ticks(absolute, midi.ticks_per_beat)
             if owner not in references or message.is_meta:
                 timeline.append((tick, owner, index, message))
+                lane.append((tick, index, message))
+        source_events.append(lane)
     timeline.sort(key=lambda event: event[:3])
     max_tick = max((event[0] for event in timeline), default=0)
 
@@ -213,9 +219,14 @@ def _source_duration(midi: mido.MidiFile, references: set[int], warnings: list[s
                 warnings.append(f'The file is shorter than {bars} bars; remaining time stays silent '
                                 f'in the shared {bars}-bar loop.')
             return bars, False
-        if max_tick <= boundary + TAIL_TOLERANCE and duplicate_tail(boundary):
-            warnings.append(f'Duplicate setup and end markers within one eighth of a beat after '
-                            f'bar {bars} were moved to the {bars}-bar boundary. All musical notes were preserved.')
+        tiny_tail = max_tick <= boundary + TAIL_TOLERANCE
+        extended_tail = (not tiny_tail and max_tick <= boundary + PPQ
+                         and verified_fl_setup_tail(source_events, boundary, max_tick, PPQ))
+        if (tiny_tail or extended_tail) and duplicate_tail(boundary):
+            detail = ('Verified repeated FL Studio setup packets within one beat after '
+                      if extended_tail else 'Duplicate setup and end markers within one eighth of a beat after ')
+            warnings.append(detail + f'bar {bars} were moved to the {bars}-bar boundary. '
+                            'All musical notes were preserved.')
             return bars, True
     raise StudioError('This MIDI extends beyond sixteen bars. Export an eight- or sixteen-bar selection '
                       'including its complete notes and expression; no musical events can be trimmed.')

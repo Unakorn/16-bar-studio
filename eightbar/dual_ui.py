@@ -34,7 +34,7 @@ def _duration_label(bars, bpm):
 class DualStudio:
     def __init__(self, root, classic_callback=None):
         self.root = root
-        self.root.title('16 Bar Studio 4.5 · My Drum Style')
+        self.root.title('16 Bar Studio 4.5.1 · My Drum Style')
         self.root.geometry('1120x880')
         self.root.minsize(940, 780)
         self.root.configure(bg=BG)

@@ -20,6 +20,8 @@ from datetime import datetime
 
 import mido
 
+from .midi_tail import verified_fl_setup_tail
+
 
 class StudioError(ValueError):
     pass
@@ -69,7 +71,7 @@ def _absolute(track):
 
 
 def _normalize_setup_tail(midi, events, warnings):
-    """Move only a tiny, unchanged exporter tail to a whole-bar boundary.
+    """Move only a verified, unchanged exporter tail to a whole-bar boundary.
 
     FL Studio can repeat channel setup a few ticks after the selected loop.
     Notes, expressive events and explicitly longer rests still determine length.
@@ -78,7 +80,10 @@ def _normalize_setup_tail(midi, events, warnings):
     duration = max((tick for lane in events for tick, _, _ in lane), default=0)
     bar = 4 * midi.ticks_per_beat
     boundary = duration // bar * bar
-    if not boundary or not 0 < duration - boundary <= midi.ticks_per_beat / 8:
+    if not boundary or not 0 < duration - boundary <= midi.ticks_per_beat:
+        return events, duration
+    extended = duration - boundary > midi.ticks_per_beat / 8
+    if extended and not verified_fl_setup_tail(events, boundary, duration, midi.ticks_per_beat):
         return events, duration
 
     timeline = []
@@ -143,8 +148,9 @@ def _normalize_setup_tail(midi, events, warnings):
             previous = tick
         midi.tracks[owner] = track
         normalized.append(adjusted)
-    warnings.append('Duplicate setup and end markers within one eighth of a beat after '
-                    f'bar {boundary // bar} were moved to its boundary in generated MIDI. '
+    detail = ('Verified repeated FL Studio setup packets within one beat after '
+              if extended else 'Duplicate setup and end markers within one eighth of a beat after ')
+    warnings.append(detail + f'bar {boundary // bar} were moved to its boundary in generated MIDI. '
                     'All musical notes and original input files were preserved.')
     return normalized, boundary
 
