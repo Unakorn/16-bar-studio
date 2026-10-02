@@ -1,6 +1,12 @@
-# 16 Bar Studio · AI Full Song 4.5
+# 16 Bar Studio · AI Full Song 4.5.1
 
 A desktop MIDI arranger for turning two musical patterns and an optional chord variation into a full song. Assign track roles, choose manual pattern order or an AI arrangement, and export aligned MIDI parts for your DAW.
+
+## Updated in 4.5.1
+
+Eight-bar FL Studio MIDI patterns no longer gain a ninth bar when their only late events are a complete duplicate instrument-setup packet. The repair checks that the packet matches the bar boundary and falls within a bounded one-beat tail. Genuine later notes, meaningful expression, held pedals, and standalone end markers keep their duration. The classic import path uses the same check.
+
+Original MIDI files and their note data remain unchanged; normalization applies to the working arrangement only.
 
 ## Run
 

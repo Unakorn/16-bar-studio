@@ -28,7 +28,7 @@ BG='#111820';PANEL='#19232e';INK='#e5edf5';MUTED='#98aabd';LINE='#2b3b4b';GREEN=
 
 class Studio:
     def __init__(self,root):
-        self.root=root;root.title('16 Bar Studio 4.5 · AI');root.geometry('1220x990');root.minsize(1030,920)
+        self.root=root;root.title('16 Bar Studio 4.5.1 · AI');root.geometry('1220x990');root.minsize(1030,920)
         root.configure(bg=BG)
         self.source=None;self.arrangement=None;self.original_arrangement=None;self.envelopes={};self.enabled={};self.selected_track=None
         self.protected_ids=set();self.protect=tk.BooleanVar(value=False)
