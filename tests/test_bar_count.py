@@ -117,9 +117,9 @@ class BarCountTests(unittest.TestCase):
         fixture(self.path, overrun=384)
         self.assertEqual(inspect_midi(self.path)['bars'], 9)
 
-    def test_larger_setup_tail_is_preserved(self):
+    def test_larger_verified_setup_tail_is_eight_bars(self):
         fixture(self.path, overrun=13)
-        self.assertEqual(inspect_midi(self.path)['bars'], 9)
+        self.assertEqual(inspect_midi(self.path)['bars'], 8)
 
     def test_tiny_end_marker_only_tail_is_normalized(self):
         fixture(self.path, overrun=0)
